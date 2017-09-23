@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+          margin: 0;
+          height: 100%;
+          background: #111;
+      }
+
+      canvas {
+          height: 100% !important;
+          width: 100% !important;
+          display: block;
+      }
+    </style>
+    <script id="envmap_dispersion_pars_fragment" type="x-shader/x-fragment">
+    uniform float dispersion;
+    uniform float dispersionBlendMultiplier;
+
+    // https://www.shadertoy.com/view/ll2GD3
+    vec3 pal( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d ) {
+        return a + b*cos( 6.28318*(c*t+d) );
+    }
+    vec3 spectrum(float n) {
+        return pal( n, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.33,0.67) );
+    }
+    uniform float time;
+    </script>
+
+    <script id="envmap_dispersion_fragment" type="x-shader/x-fragment">
+    vec4 envColor = vec4(0);
+
+    vec3 cameraToVertex = normalize( vWorldPosition - cameraPosition );
+    vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+
+    for (int i = 0; i < DISPERSION_SAMPLES; i++) {
+
+      float wavelength = float(i) / float(DISPERSION_SAMPLES);
+
+      float riMax = refractionRatio * (1. + dispersion);
+      float ri = mix(refractionRatio, riMax, wavelength);
+      vec3 reflectVec = refract( cameraToVertex, worldNormal, ri );
+
+      vec4 envColorSample = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );
+      
+      envColorSample = envMapTexelToLinear( envColorSample );
+      envColorSample.rgb *= spectrum(wavelength - .15);
+      envColorSample.rgb /= float(DISPERSION_SAMPLES) / dispersionBlendMultiplier;
+      envColor.rgb += envColorSample.rgb / 10.;
+    }
+
+    vec4 col2 = vec4(0);
+
+      vec3 reflectVec = refract( cameraToVertex, worldNormal, .7 );
+
+      vec4 envColorSample = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );
+      
+      envColorSample = envMapTexelToLinear( envColorSample );
+      col2.rgb = envColorSample.rgb;
+
+      vec4 high = vec4(smoothstep(.8, .1, length(col2)));
+
+    envColor = envColor + (envColor * high * 2.);
+    //envColor = envColor * col2;
+
+    float g = envColor.g * (1.- envColor.r * envColor.b);
+    g = smoothstep(0., .4, g);
+    //envColor.g *= mix(1., .8, g);
+    //envColor.rb *= mix(1., 1.5, 1.-g);
+
+    //envColor = vec4(smoothstep(.5, .3, length(col2)));
+
+    outgoingLight = envColor.xyz;
+    </script>
+    <script src="lib/three.min.js"></script>
+    <script src="lib/TrackballControls.js"></script>
+  </head>
+  <body>
+    <script src="main.js"></script>
+  </body>
+</html>
