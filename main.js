@@ -1,3 +1,5 @@
+Math.seedrandom('6');
+
 var width = window.innerWidth;
 var height = window.innerHeight;
 
@@ -19,6 +21,16 @@ scene.background = new THREE.Color(0xdfecff);
 var boxes = new THREE.Group();
 scene.add(boxes);
 
+
+var icoGeom = new THREE.IcosahedronGeometry(13, 2);
+// var material = new THREE.MeshBasicMaterial({
+//     wireframe: true,
+//     color: 0x000000
+// });
+// var ico = new THREE.Mesh(icoGeom, material);
+// scene.add(ico);
+
+
 var randomPointOnSphere = function(radius) {
     var u = Math.random();
     var v = Math.random();
@@ -38,29 +50,58 @@ var gain = function(x, P) {
     }
 };
 
+var col0 = new THREE.Color(0xdfecff);
 var col1 = new THREE.Color(0xffffff);
-var col2 = new THREE.Color(0x122546);
-var col3 = new THREE.Color(0x79a2d0);
+var col2 = new THREE.Color(0x79a2d0);
+var col3 = new THREE.Color(0x122546);
 
-var addRandomBox = function() {
-    var size = Math.random() * 2 + 0.2;
+var addBox = function(size, position, color) {
     var geometry = new THREE.BoxGeometry(size, size, size);
-    var color = [col1, col2, col3][Math.round(Math.random() * 2)];
     var material = new THREE.MeshBasicMaterial({
         color: color
     });
     var box = new THREE.Mesh( geometry, material );
-    var radius = gain(Math.random(), 1/2) * 8 + 8;
-    box.position.copy(randomPointOnSphere(radius));
+    box.position.copy(position);
     boxes.add(box);
+}
+
+var addRandomBox = function() {
+    var size = Math.random() * 2 + 0.2;
+    var color = [col1, col2, col0][Math.round(Math.random() * 2)];
+    var radius = gain(Math.random(), 1/2) * 8 + 8;
+    var position = randomPointOnSphere(radius);
+    addBox(size, position, color);
 };
 
-for (var i = 0; i <200; i++) {
-    addRandomBox();
-}
+// for (var i = 0; i <1500; i++) {
+//     addRandomBox();
+// }
+
+icoGeom.vertices.forEach(function(vert) {
+    var direction, position, size;
+
+    direction = randomPointOnSphere(.5);
+    position = vert.clone().add(direction);
+    size = Math.random() * 1 + 1;
+    addBox(size, position, col2);
+
+    direction = randomPointOnSphere(5);
+    position = vert.clone();
+    position.multiplyScalar(.8);
+    position.add(direction);
+    size = Math.random() * .75 + .75;
+    addBox(size, position, col1);
+});
+
+ // addBox(2, new THREE.Vector3(0,8,0), col3);
+
 
 var cubeCamera = new THREE.CubeCamera( 1, 100000, 128 );
 scene.add( cubeCamera );
+cubeCamera.update(renderer, scene);
+
+// scene.background = col1;
+boxes.visible = false;
 
 var startTime = Date.now();
 
@@ -101,7 +142,7 @@ DispersionMaterial.prototype.constructor = DispersionMaterial;
 var material = new DispersionMaterial({ 
     envMap: cubeCamera.renderTarget.texture,
     refractionRatio: .99,
-    dispersionSamples: 20,
+    dispersionSamples: 10,
     dispersion: 0.6
 });
 material.envMap.mapping = THREE.CubeRefractionMapping;
@@ -145,7 +186,7 @@ var shape = function(u, v) {
     scale /= vertices.length;
     scale = THREE.Math.lerp(0, .7, scale);
 
-    point.multiplyScalar(scale);
+   point.multiplyScalar(scale);
     return point;
 }
 
@@ -155,8 +196,9 @@ var mesh = new THREE.Mesh( geometry, material );
 scene.add( mesh );
 
 
+
 function render() {
-    scene.background = new THREE.Color(0xdfecff);
+   // scene.background = new THREE.Color(0xdfecff);
 
     var elapsedMilliseconds = Date.now() - startTime;
     var elapsedSeconds = elapsedMilliseconds / 1000.;
@@ -166,13 +208,11 @@ function render() {
     mesh.rotation.y = elapsedSeconds * .5;
     mesh.rotation.z = elapsedSeconds * .25;
 
-    mesh.visible = false;
-    boxes.visible = true;
-    cubeCamera.position.copy(mesh.position);
-    cubeCamera.update(renderer, scene);
-    mesh.visible = true;
-    boxes.visible = false;
-    scene.background = new THREE.Color(0xffffff);
+    //mesh.visible = false;
+    //boxes.visible = true;
+    //mesh.visible = true;
+    //boxes.visible = false;
+    //scene.background = new THREE.Color(0xffffff);
 
     renderer.render(scene, camera);
 }

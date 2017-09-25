@@ -26,6 +26,30 @@
         return pal( n, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.33,0.67) );
     }
     uniform float time;
+
+    vec3 hit(vec3 dir, vec3 normal, float ri) {
+      vec3 refracted = refract( dir, normal, ri );
+      if (refracted == vec3(0)) {
+        return normalize(vec3(1,0,0));
+        return reflect(dir, normal);
+      }
+      return refracted;
+    }
+
+    vec4 doSample(vec3 dir) {
+      float d = dot(dir, normalize(cameraPosition));
+      float l = log(length(cameraPosition) / 5.);
+      float start = mix(-.9, -.99, l) - .1;
+      start = -.99;
+      float e = smoothstep(start*1.01, start, d);
+      vec4 blob = vec4(18, 37, 70, 255) / 255.;
+      blob = vec4(121, 162, 220, 255) / 255.;
+      // blob = vec4(121, 162, 208, 255) / 255.;
+      vec4 col = textureCube( envMap, vec3( flipEnvMap * dir.x, dir.yz ) );
+      col = mix(blob, col, e);
+      return col;
+    }
+
     </script>
 
     <script id="envmap_dispersion_fragment" type="x-shader/x-fragment">
@@ -33,6 +57,10 @@
 
     vec3 cameraToVertex = normalize( vWorldPosition - cameraPosition );
     vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+    
+    // cameraToVertex = vec3(0,0,length(vWorldPosition- cameraPosition));
+    // worldNormal = normal;
+
 
     for (int i = 0; i < DISPERSION_SAMPLES; i++) {
 
@@ -40,9 +68,9 @@
 
       float riMax = refractionRatio * (1. + dispersion);
       float ri = mix(refractionRatio, riMax, wavelength);
-      vec3 reflectVec = refract( cameraToVertex, worldNormal, ri );
+      vec3 reflectVec = hit( cameraToVertex, worldNormal, ri );
 
-      vec4 envColorSample = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );
+      vec4 envColorSample = doSample(reflectVec);
       
       envColorSample = envMapTexelToLinear( envColorSample );
       envColorSample.rgb *= spectrum(wavelength - .15);
@@ -52,14 +80,14 @@
 
     vec4 col2 = vec4(0);
 
-      vec3 reflectVec = refract( cameraToVertex, worldNormal, .7 );
+      vec3 reflectVec = hit( cameraToVertex, worldNormal, .7 );
 
-      vec4 envColorSample = textureCube( envMap, vec3( flipEnvMap * reflectVec.x, reflectVec.yz ) );
-      
+    vec4 envColorSample = doSample(reflectVec);
+            
       envColorSample = envMapTexelToLinear( envColorSample );
       col2.rgb = envColorSample.rgb;
 
-      vec4 high = vec4(smoothstep(.8, .1, length(col2)));
+      vec4 high = vec4(smoothstep(1.65, 1.7, length(col2))) * .1;
 
     envColor = envColor + (envColor * high * 2.);
     //envColor = envColor * col2;
@@ -69,12 +97,17 @@
     //envColor.g *= mix(1., .8, g);
     //envColor.rb *= mix(1., 1.5, 1.-g);
 
+    // envColor = col2;
+
+    // envColor = high;
+
     //envColor = vec4(smoothstep(.5, .3, length(col2)));
 
     outgoingLight = envColor.xyz;
     </script>
     <script src="lib/three.min.js"></script>
     <script src="lib/TrackballControls.js"></script>
+    <script src="lib/seedrandom.min.js"></script>
   </head>
   <body>
     <script src="main.js"></script>
