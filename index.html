@@ -14,6 +14,135 @@
           display: block;
       }
     </style>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+
+varying vec3 vPosition;
+varying vec3 vScreenNormal;
+varying vec3 vWorldNormal;
+varying mat4 vModelViewMatrix;
+varying mat4 vViewMatrix;
+varying mat4 vModelMatrix;
+varying vec3 vWorldPosition;
+
+
+vec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {
+  return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );
+}
+
+void main() {
+  vViewMatrix = viewMatrix;
+  vModelViewMatrix = modelViewMatrix;
+  vPosition = (projectionMatrix * modelViewMatrix * vec4(position,1.0)).xyz;
+  vScreenNormal = normalMatrix * normal;
+  vWorldNormal = inverseTransformDirection( vScreenNormal, viewMatrix );
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+  vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+  vWorldPosition = worldPosition.xyz;
+  // gl_Position = projectionMatrix * (modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0) + vec4(position.x, position.y, 0.0, 0.0));
+
+}
+
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+uniform vec3 col0;
+uniform vec3 col1;
+uniform vec3 col2;
+uniform vec3 col3;
+uniform float time;
+uniform samplerCube envMap;
+
+varying mat4 vModelViewMatrix;
+varying mat4 vViewMatrix;
+varying mat4 vModelMatrix;
+varying vec3 vPosition;
+varying vec3 vWorldPosition;
+varying vec3 vScreenNormal;
+varying vec3 vWorldNormal;
+
+vec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {
+  return normalize( ( vec4( dir, 1.0 ) * matrix ).xyz );
+}
+
+// https://www.shadertoy.com/view/ll2GD3
+vec3 pal( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d ) {
+  return a + b*cos( 6.28318*(c*t+d) );
+}
+vec3 spectrum(float n) {
+  return pal( n, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(1.0,1.0,1.0),vec3(0.0,0.33,0.67) );
+}
+
+vec3 sampleRay(vec3 ray, vec3 normal, float ri) {
+  vec3 dir = refract(ray, normal, ri);
+  if (dir == vec3(0)) {
+    return vec3(1);
+  }
+  return textureCube( envMap, dir ).rgb;
+}
+
+const float DISPERSION_SAMPLES = 10.;
+
+void main(void) {
+  vec3 normal = vScreenNormal;
+  normal = vWorldNormal;
+  vec3 camPos = vec3(0,0,-1);
+  camPos = cameraPosition;
+  // camPos = vec3(0,0,length(camPos));
+  vec3 ray = normalize(vWorldPosition - cameraPosition);
+
+
+
+  float refractionRatio = .99;
+  float dispersion = .6;
+  float dispersionBlendMultiplier = 20.;
+
+  vec3 col = vec3(0);
+  vec3 sample;
+
+  for (float i = 0.; i < DISPERSION_SAMPLES; i++) {
+    float wavelength = i / DISPERSION_SAMPLES;
+    float riMax = refractionRatio * (1. + dispersion);
+    float ri = mix(refractionRatio, riMax, wavelength);
+    
+    sample = sampleRay(ray, normal, ri);
+      
+    sample *= spectrum(wavelength - .15);
+    sample /= DISPERSION_SAMPLES / dispersionBlendMultiplier;
+    col += sample / 10.;
+  }
+
+
+    vec3 col2 = vec3(0);
+    col2 = sampleRay(ray, normal, .7);
+    vec3 high = vec3(smoothstep(1.65, 1.7, length(col2))) * .1;
+    col = col + (col * high * 2.);
+
+  gl_FragColor = vec4(col, 1.0);
+}
+
+    // for (int i = 0; i < DISPERSION_SAMPLES; i++) {
+
+    //   float wavelength = float(i) / float(DISPERSION_SAMPLES);
+
+    //   float riMax = refractionRatio * (1. + dispersion);
+    //   float ri = mix(refractionRatio, riMax, wavelength);
+    //   vec3 reflectVec = refract( cameraToVertex, worldNormal, ri );
+
+    //   vec4 envColorSample = vec4(env(reflectVec), 1);
+    //   float riMax = refractionRatio * (1. + dispersion);
+    //   float ri = mix(refractionRatio, riMax, wavelength);
+    //   vec3 reflectVec = refract( cameraToVertex, worldNormal, ri );
+
+    //   vec4 envColorSample = vec4(env(reflectVec), 1);
+      
+    //   envColorSample = envMapTexelToLinear( envColorSample );
+    //   envColorSample.rgb *= spectrum(wavelength - .15);
+    //   envColorSample.rgb /= float(DISPERSION_SAMPLES) / ispersionBlendMultiplier;
+    //   envColor.rgb += envColorSample.rgb / 10.;
+    // }  
+</script>
+
     <script id="envmap_dispersion_pars_fragment" type="x-shader/x-fragment">
     uniform float dispersion;
     uniform float dispersionBlendMultiplier;
@@ -152,7 +281,7 @@
 
     outgoingLight = envColor.xyz;
     </script>
-    <script src="lib/three.min.js"></script>
+    <script src="lib/three.js"></script>
     <script src="lib/TrackballControls.js"></script>
     <script src="lib/seedrandom.min.js"></script>
   </head>

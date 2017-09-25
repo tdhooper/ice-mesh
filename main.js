@@ -149,6 +149,49 @@ var material = new DispersionMaterial({
 });
 material.envMap.mapping = THREE.CubeRefractionMapping;
 
+var uniforms = {
+    time: { type: "f", value: 1.0 },
+    resolution: { type: "v2", value: new THREE.Vector2() }
+};
+
+
+function SomeMaterial(parameters) {
+    THREE.ShaderMaterial.call(this);
+
+    this.envMap = null;
+
+    // this.isMeshStandardMaterial = true;
+    this.setValues( parameters );
+
+    this.uniforms = THREE.UniformsUtils.merge( [
+        THREE.UniformsLib.common,
+        THREE.UniformsLib.specularmap,
+        THREE.UniformsLib.envmap,
+        THREE.UniformsLib.aomap,
+        THREE.UniformsLib.lightmap,
+        THREE.UniformsLib.emissivemap,
+        THREE.UniformsLib.fog,
+        THREE.UniformsLib.lights,
+        this.uniforms
+    ] );
+
+    this.uniforms.envMap.value = this.envMap;
+}
+
+SomeMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+SomeMaterial.prototype.constructor = SomeMaterial;
+
+
+var material = new SomeMaterial( {
+    envMap: cubeCamera.renderTarget.texture,
+    uniforms: uniforms,
+    vertexShader: document.getElementById( 'vertexShader' ).textContent,
+    fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+});
+
+material.envMap.mapping = THREE.CubeRefractionMapping;
+
+
 // material = new THREE.MeshBasicMaterial({
 //     wireframe: true
 // });
@@ -188,7 +231,7 @@ var shape = function(u, v) {
     scale /= vertices.length;
     scale = THREE.Math.lerp(0, .7, scale);
 
-   point.multiplyScalar(scale);
+   // point.multiplyScalar(scale);
     return point;
 }
 
@@ -205,7 +248,7 @@ function render() {
     var elapsedMilliseconds = Date.now() - startTime;
     var elapsedSeconds = elapsedMilliseconds / 1000.;
     material.uniforms.time.value = 60. * elapsedSeconds;
-
+    
     mesh.rotation.x = elapsedSeconds * 1;
     mesh.rotation.y = elapsedSeconds * .5;
     mesh.rotation.z = elapsedSeconds * .25;
