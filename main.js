@@ -16,7 +16,6 @@ renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
 
 var scene = new THREE.Scene()
-scene.background = new THREE.Color(0xdfecff);
 
 var boxes = new THREE.Group();
 scene.add(boxes);
@@ -54,6 +53,9 @@ var col0 = new THREE.Color(0xdfecff);
 var col1 = new THREE.Color(0xffffff);
 var col2 = new THREE.Color(0x79a2d0);
 var col3 = new THREE.Color(0x122546);
+
+scene.background = col0;
+
 
 var addBox = function(size, position, color) {
     var geometry = new THREE.BoxGeometry(size, size, size);
