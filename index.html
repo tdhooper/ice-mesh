@@ -15,41 +15,22 @@
       }
     </style>
     <script id="vertexShader" type="x-shader/x-vertex">
-varying vec3 vPosition;
-varying vec3 vScreenNormal;
 varying vec3 vWorldNormal;
-varying mat4 vModelViewMatrix;
-varying mat4 vViewMatrix;
-varying mat4 vModelMatrix;
 varying vec3 vWorldPosition;
 
-vec3 inverseTransformDirection( in vec3 dir, in mat4 matrix ) {
-  return normalize( ( vec4( dir, 0.0 ) * matrix ).xyz );
-}
-
 void main() {
-  vViewMatrix = viewMatrix;
-  vModelViewMatrix = modelViewMatrix;
-  vPosition = (projectionMatrix * modelViewMatrix * vec4(position,1.0)).xyz;
-  vScreenNormal = normalMatrix * normal;
-  vWorldNormal = inverseTransformDirection( vScreenNormal, viewMatrix );
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-  vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
-  vWorldPosition = worldPosition.xyz;
+  vWorldNormal = (vec4(normalMatrix * normal, 0) * viewMatrix).xyz;
+  vWorldPosition = (modelMatrix * vec4(position, 1)).xyz;
+
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
 }
     </script>
 
     <script id="fragmentShader" type="x-shader/x-fragment">
 uniform samplerCube envMap;
 
-varying mat4 vModelViewMatrix;
-varying mat4 vViewMatrix;
-varying mat4 vModelMatrix;
-varying vec3 vPosition;
 varying vec3 vWorldPosition;
-varying vec3 vScreenNormal;
 varying vec3 vWorldNormal;
-
 
 // https://www.shadertoy.com/view/ll2GD3
 vec3 pal( in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d ) {
