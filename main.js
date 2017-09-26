@@ -106,49 +106,6 @@ cubeCamera.update(renderer, scene);
 boxes.visible = false;
 
 var startTime = Date.now();
-
-function DispersionMaterial(parameters) {
-    THREE.ShaderMaterial.call(this);
-
-    this.envMap = null;
-    this.refractionRatio = 0.98;
-    this.lights = true;
-    this.isMeshBasicMaterial = true; // Force refreshUniformsCommon to be run
-    this.dispersionSamples = 10;
-    this.dispersion = 0.05;
-    this.dispersionBlendMultiplier = 20;
-
-    var envmap_dispersion_pars_fragment = document.getElementById('envmap_dispersion_pars_fragment').textContent;
-    var envmap_dispersion_fragment = document.getElementById('envmap_dispersion_fragment').textContent;
-    var fragmentShader = THREE.ShaderLib.phong.fragmentShader;
-    fragmentShader = fragmentShader.replace('#include <envmap_pars_fragment>', '#include <envmap_pars_fragment>\n' + envmap_dispersion_pars_fragment);
-    fragmentShader = fragmentShader.replace('#include <envmap_fragment>', envmap_dispersion_fragment);
-    
-    this.uniforms = THREE.UniformsUtils.clone( THREE.ShaderLib.phong.uniforms );
-    this.vertexShader = THREE.ShaderLib.phong.vertexShader;
-    this.fragmentShader = fragmentShader;
-
-    this.setValues( parameters );
-
-    this.uniforms.dispersion = {value: this.dispersion};
-    this.uniforms.dispersionBlendMultiplier = {value: this.dispersionBlendMultiplier};
-
-    this.uniforms.time = { type: "f", value: 1.0 },
-
-    this.defines.DISPERSION_SAMPLES = this.dispersionSamples;
-}
-
-DispersionMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-DispersionMaterial.prototype.constructor = DispersionMaterial;
-
-var material = new DispersionMaterial({ 
-    envMap: cubeCamera.renderTarget.texture,
-    refractionRatio: .99,
-    dispersionSamples: 10,
-    dispersion: 0.6
-});
-material.envMap.mapping = THREE.CubeRefractionMapping;
-
 var uniforms = {
     time: { type: "f", value: 1.0 },
     resolution: { type: "v2", value: new THREE.Vector2() }
