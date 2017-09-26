@@ -161,7 +161,7 @@ var shape = function(u, v) {
     scale /= vertices.length;
     scale = THREE.Math.lerp(0, .7, scale);
 
-    // point.multiplyScalar(scale);
+    point.multiplyScalar(scale);
     return point;
 }
 
