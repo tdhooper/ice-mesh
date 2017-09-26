@@ -22,12 +22,6 @@ scene.add(boxes);
 
 
 var icoGeom = new THREE.IcosahedronGeometry(13, 2);
-// var material = new THREE.MeshBasicMaterial({
-//     wireframe: true,
-//     color: 0x000000
-// });
-// var ico = new THREE.Mesh(icoGeom, material);
-// scene.add(ico);
 
 
 var randomPointOnSphere = function(radius) {
@@ -67,18 +61,6 @@ var addBox = function(size, position, color) {
     boxes.add(box);
 }
 
-var addRandomBox = function() {
-    var size = Math.random() * 2 + 0.2;
-    var color = [col1, col2, col0][Math.round(Math.random() * 2)];
-    var radius = gain(Math.random(), 1/2) * 8 + 8;
-    var position = randomPointOnSphere(radius);
-    addBox(size, position, color);
-};
-
-// for (var i = 0; i <1500; i++) {
-//     addRandomBox();
-// }
-
 icoGeom.vertices.forEach(function(vert) {
     var direction, position, size;
 
@@ -95,24 +77,20 @@ icoGeom.vertices.forEach(function(vert) {
     addBox(size, position, col1);
 });
 
- // addBox(2, new THREE.Vector3(0,8,0), col3);
-
 
 var cubeCamera = new THREE.CubeCamera( 1, 100000, 128 );
 scene.add( cubeCamera );
 cubeCamera.update(renderer, scene);
 
-// scene.background = col1;
+scene.background = col1;
 boxes.visible = false;
 
 var startTime = Date.now();
 var uniforms = {
     time: { type: "f", value: 1.0 },
-    resolution: { type: "v2", value: new THREE.Vector2() }
 };
 
-
-function SomeMaterial(parameters) {
+function IceMaterial(parameters) {
     THREE.ShaderMaterial.call(this);
 
     this.envMap = null;
@@ -135,11 +113,10 @@ function SomeMaterial(parameters) {
     this.uniforms.envMap.value = this.envMap;
 }
 
-SomeMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
-SomeMaterial.prototype.constructor = SomeMaterial;
+IceMaterial.prototype = Object.create(THREE.ShaderMaterial.prototype);
+IceMaterial.prototype.constructor = IceMaterial;
 
-
-var material = new SomeMaterial( {
+var material = new IceMaterial({
     envMap: cubeCamera.renderTarget.texture,
     uniforms: uniforms,
     vertexShader: document.getElementById( 'vertexShader' ).textContent,
@@ -148,10 +125,6 @@ var material = new SomeMaterial( {
 
 material.envMap.mapping = THREE.CubeRefractionMapping;
 
-
-// material = new THREE.MeshBasicMaterial({
-//     wireframe: true
-// });
 
 var shape = function(u, v) {
     var phi = u * Math.PI * 2;
@@ -188,11 +161,10 @@ var shape = function(u, v) {
     scale /= vertices.length;
     scale = THREE.Math.lerp(0, .7, scale);
 
-   // point.multiplyScalar(scale);
+    point.multiplyScalar(scale);
     return point;
 }
 
-// var geometry = new THREE.SphereGeometry(1, 100, 100);
 var geometry = new THREE.ParametricGeometry(shape, 200, 200 );
 var mesh = new THREE.Mesh( geometry, material );
 scene.add( mesh );
@@ -200,8 +172,6 @@ scene.add( mesh );
 
 
 function render() {
-   // scene.background = new THREE.Color(0xdfecff);
-
     var elapsedMilliseconds = Date.now() - startTime;
     var elapsedSeconds = elapsedMilliseconds / 1000.;
     material.uniforms.time.value = 60. * elapsedSeconds;
@@ -209,12 +179,6 @@ function render() {
     mesh.rotation.x = elapsedSeconds * 1;
     mesh.rotation.y = elapsedSeconds * .5;
     mesh.rotation.z = elapsedSeconds * .25;
-
-    //mesh.visible = false;
-    //boxes.visible = true;
-    //mesh.visible = true;
-    //boxes.visible = false;
-    //scene.background = new THREE.Color(0xffffff);
 
     renderer.render(scene, camera);
 }
