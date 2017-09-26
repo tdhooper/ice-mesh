@@ -161,7 +161,7 @@ var shape = function(u, v) {
     scale /= vertices.length;
     scale = THREE.Math.lerp(0, .7, scale);
 
-    point.multiplyScalar(scale);
+    // point.multiplyScalar(scale);
     return point;
 }
 
@@ -179,6 +179,8 @@ function render() {
     mesh.rotation.x = elapsedSeconds * 1;
     mesh.rotation.y = elapsedSeconds * .5;
     mesh.rotation.z = elapsedSeconds * .25;
+
+    mesh.position.x = Math.sin(elapsedSeconds) * 2;
 
     renderer.render(scene, camera);
 }

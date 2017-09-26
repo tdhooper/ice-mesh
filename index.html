@@ -17,12 +17,18 @@
     <script id="vertexShader" type="x-shader/x-vertex">
 varying vec3 vWorldNormal;
 varying vec3 vWorldPosition;
+
+varying mat4 vModelViewMatrix;
 varying mat4 vViewMatrix;
+varying mat4 vModelMatrix;
 
 void main() {
   vWorldNormal = (vec4(normalMatrix * normal, 0) * viewMatrix).xyz;
   vWorldPosition = (modelMatrix * vec4(position, 1)).xyz;
+
+  vModelViewMatrix = modelViewMatrix;
   vViewMatrix = viewMatrix;
+  vModelMatrix = modelMatrix;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
 }
@@ -33,7 +39,10 @@ uniform samplerCube envMap;
 
 varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
+
+varying mat4 vModelViewMatrix;
 varying mat4 vViewMatrix;
+varying mat4 vModelMatrix;
 
 
 // https://www.shadertoy.com/view/ll2GD3
