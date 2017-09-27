@@ -25,6 +25,7 @@ varying mat4 vModelMatrix;
 void main() {
   vWorldNormal = (vec4(normalMatrix * normal, 0) * viewMatrix).xyz;
   vWorldPosition = (modelMatrix * vec4(position, 1)).xyz;
+  // vWorldPosition = normalMatrix * position;
 
   vModelViewMatrix = modelViewMatrix;
   vViewMatrix = viewMatrix;
@@ -36,6 +37,7 @@ void main() {
 
     <script id="fragmentShader" type="x-shader/x-fragment">
 uniform samplerCube envMap;
+uniform mat4 billboardMatrix;
 
 varying vec3 vWorldPosition;
 varying vec3 vWorldNormal;
@@ -54,19 +56,23 @@ vec3 spectrum(float n) {
 }
 
 vec3 sampleRay(vec3 ray, vec3 normal, float ri) {
+  // ray = (billboardMatrix*vec4(ray, 0)).xyz;
+  
   vec3 dir = refract(ray, normal, ri);
   if (dir == vec3(0)) {
     return vec3(1);
   }
-  dir = (vViewMatrix * vec4(dir,0)).xyz;
+  dir = (billboardMatrix * vec4(dir, 0)).xyz;
+  // dir = (vViewMatrix * vec4(dir,0)).xyz;
   return textureCube( envMap, dir ).rgb;
 }
 
 const float DISPERSION_SAMPLES = 10.;
 
 void main(void) {
+  vec3 position = vWorldPosition;
   vec3 normal = vWorldNormal;
-  vec3 ray = normalize(vWorldPosition - cameraPosition);
+  vec3 ray = normalize(position - cameraPosition);
 
   float refractionRatio = .99;
   float dispersion = .6;
